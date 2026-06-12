@@ -6,6 +6,11 @@ const problems = require("./problems.json");
 const { judgeSubmission } = require("./judge");
 const { randomUUID } = require("crypto");
 
+const { exec } = require("child_process");
+exec("which g++ && g++ --version", (err, stdout, stderr) => {
+  console.log("g++ check:", stdout || stderr || err?.message);
+});
+
 const app = express();
 app.use(cors({ origin: "https://dsabattle2.vercel.app" }));
 const server = http.createServer(app);
