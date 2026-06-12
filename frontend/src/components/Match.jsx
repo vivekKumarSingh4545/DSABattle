@@ -62,7 +62,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
   // Set default code template when language or problem changes
   useEffect(() => {
     setCode(STARTER_TEMPLATES[lang]);
-  }, [lang]);
+  }, [lang, problem.id]);
 
   // Reset voting states when new match / problem begins
   useEffect(() => {
@@ -79,10 +79,12 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
       setIsSubmitting(false);
       setResult(winner === me ? "🎉 You win!" : `💀 ${opponent} won`);
       setFeedback(message);
+      setHideControls(false);
     };
     const onFeedback = (msg) => {
       setIsSubmitting(false);
       setFeedback(msg);
+      setHideControls(false);
     };
 
     const onOpponentVotedNext = () => {
@@ -109,6 +111,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
   const submit = () => {
     setFeedback("");
     setIsSubmitting(true);
+    setHideControls(false);
     socket.emit("submit", { code, language: lang });
   };
 
