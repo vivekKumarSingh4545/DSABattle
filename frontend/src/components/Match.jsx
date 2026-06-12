@@ -378,6 +378,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
                 </div>
               </div>
             )}
+            <div style={{ height: "24px", minHeight: "24px" }} />
           </div>
         )}
       </div>
