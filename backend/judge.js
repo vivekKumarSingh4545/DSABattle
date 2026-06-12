@@ -8,7 +8,7 @@ function normalize(s) {
   return (s || "").toString().trim().replace(/\r/g, "");
 }
 
-async function runOnce({ code, language, input, timeLimitMs = 3000 }) {
+async function runOnce({ code, language, input, timeLimitMs = 5000 }) {
   const jobId = crypto.randomBytes(8).toString("hex");
   const dir = path.join(os.tmpdir(), `judge-${jobId}`);
   await fs.ensureDir(dir);
@@ -22,24 +22,26 @@ async function runOnce({ code, language, input, timeLimitMs = 3000 }) {
     } else if (language === "java") {
       const src = path.join(dir, "Solution.java");
       await fs.writeFile(src, code, "utf8");
-      // compile then run
-      cmd = `bash -lc "cd '${dir}' && javac Solution.java && java -Xmx256m -cp . Solution"`;
+      cmd = `cd '${dir}' && javac Solution.java && java -Xmx256m -cp . Solution`;
     } else if (language === "cpp") {
       const src = path.join(dir, "Solution.cpp");
       await fs.writeFile(src, code, "utf8");
-      // compile then run
-      cmd = `bash -lc "cd '${dir}' && g++ -O3 -std=c++17 Solution.cpp -o Solution && ./Solution"`;
+      cmd = `cd '${dir}' && g++ -O3 -std=c++17 Solution.cpp -o Solution && ./Solution`;
     } else {
       throw new Error("Unsupported language");
     }
 
     const out = await new Promise((resolve, reject) => {
-      const child = exec(cmd, { timeout: timeLimitMs, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
-        if (err) {
-          return reject(new Error(stderr?.trim() || err.message || "Runtime Error"));
+      const child = exec(
+        cmd,
+        { timeout: timeLimitMs, maxBuffer: 1024 * 1024, shell: "/bin/sh" },
+        (err, stdout, stderr) => {
+          if (err) {
+            return reject(new Error(stderr?.trim() || err.message || "Runtime Error"));
+          }
+          resolve(stdout);
         }
-        resolve(stdout);
-      });
+      );
       if (input) {
         child.stdin.write(input);
       }
@@ -48,19 +50,33 @@ async function runOnce({ code, language, input, timeLimitMs = 3000 }) {
 
     return { ok: true, stdout: normalize(out) };
   } finally {
-    // cleanup
     try { await fs.remove(dir); } catch {}
   }
 }
 
 async function judgeSubmission({ code, language, problem }) {
   for (const tc of problem.test_cases) {
-    const res = await runOnce({ code, language, input: tc.input + "\n" });
+    let res;
+    // retry once on failure
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        res = await runOnce({ code, language, input: tc.input + "\n" });
+        break;
+      } catch (e) {
+        if (attempt === 1) {
+          return { success: false, message: `Judge Error: ${e.message}` };
+        }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
     if (!res.ok) {
-      return { success: false, message: `Runtime/Error: ${res.error || ""}` };
+      return { success: false, message: `Runtime Error: ${res.error || ""}` };
     }
     if (normalize(res.stdout) !== normalize(tc.output)) {
-      return { success: false, message: `Wrong Answer on input:\n${tc.input}\nExpected: ${tc.output}\nGot: ${res.stdout}` };
+      return {
+        success: false,
+        message: `Wrong Answer on input:\n${tc.input}\nExpected: ${tc.output}\nGot: ${res.stdout}`
+      };
     }
   }
   return { success: true, message: "All test cases passed." };
