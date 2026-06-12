@@ -7,9 +7,9 @@ const { judgeSubmission } = require("./judge");
 const { randomUUID } = require("crypto");
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: "https://dsabattle2.vercel.app" }));
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: "https://dsabattle2.vercel.app" } });
 
 // In-memory state (fine for MVP)
 let waiting = null; // { socketId, name }

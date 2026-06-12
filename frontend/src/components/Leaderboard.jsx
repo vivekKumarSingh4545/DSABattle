@@ -7,7 +7,7 @@ export default function Leaderboard() {
   useEffect(() => {
     const fetchLB = async () => {
       try {
-        const res = await fetch("http://localhost:5001/leaderboard");
+        const res = await fetch("https://dsabattle.onrender.com/leaderboard");
         setRows(await res.json());
       } catch (e) {
         console.error("Leaderboard fetch error:", e);
