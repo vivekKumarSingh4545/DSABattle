@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { socket } from "../socket";
 
 export default function Lobby({ setPlayerName, initialName = "", autoSearch, setAutoSearch }) {
   const [name, setName] = useState(initialName);
   const [isSearching, setIsSearching] = useState(false);
-  const inputRef = useRef(null);
 
   useEffect(() => {
     const onQueued = () => {
@@ -16,12 +15,6 @@ export default function Lobby({ setPlayerName, initialName = "", autoSearch, set
       socket.off("queued", onQueued);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isSearching && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isSearching]);
 
   // When autoSearch is triggered from outside
   useEffect(() => {
@@ -48,8 +41,6 @@ export default function Lobby({ setPlayerName, initialName = "", autoSearch, set
       {!isSearching ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "stretch" }}>
           <input
-            ref={inputRef}
-            autoFocus
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="e.g., CodeWizard"
