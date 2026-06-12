@@ -15,6 +15,43 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
   const [result, setResult] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Editor resizing states
+  const [editorHeight, setEditorHeight] = useState(400);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizerHovered, setIsResizerHovered] = useState(false);
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e) => {
+      const container = document.getElementById("resizable-editor-container");
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const newHeight = e.clientY - rect.top;
+        // Limit height between 150px and 800px
+        if (newHeight >= 150 && newHeight <= 800) {
+          setEditorHeight(newHeight);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
   // Rematch / navigation coordination states
   const [hasVotedNext, setHasVotedNext] = useState(false);
   const [opponentVotedNext, setOpponentVotedNext] = useState(false);
@@ -157,7 +194,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
         </div>
 
         {/* Monaco Editor Container */}
-        <div style={{ flex: 1, border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 8, overflow: "hidden", background: "#1e1e1e", minHeight: "150px" }}>
+        <div id="resizable-editor-container" style={{ height: `${editorHeight}px`, border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 8, overflow: "hidden", background: "#1e1e1e", minHeight: "150px", position: "relative" }}>
           <Editor
             height="100%"
             language={lang}
@@ -174,6 +211,32 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
               tabSize: 4,
             }}
           />
+        </div>
+
+        {/* Draggable Divider */}
+        <div
+          onMouseDown={handleMouseDown}
+          onMouseEnter={() => setIsResizerHovered(true)}
+          onMouseLeave={() => setIsResizerHovered(false)}
+          style={{
+            height: "12px",
+            margin: "-8px 0",
+            cursor: "ns-resize",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10,
+            userSelect: "none"
+          }}
+        >
+          <div style={{
+            width: "60px",
+            height: "4px",
+            borderRadius: "2px",
+            background: isDragging || isResizerHovered ? "#818CF8" : "rgba(255, 255, 255, 0.15)",
+            boxShadow: isDragging || isResizerHovered ? "0 0 8px #818CF8" : "none",
+            transition: "all 0.2s"
+          }} />
         </div>
 
         {/* Submission / Results Panel */}
