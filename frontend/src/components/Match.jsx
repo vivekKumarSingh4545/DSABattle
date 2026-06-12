@@ -84,19 +84,25 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
     setIsSubmitting(false);
   }, [problem.id]);
 
+  // Scroll to bottom when controls are shown, or feedback/results are received
+  useEffect(() => {
+    if (!hideControls) {
+      const t = setTimeout(scrollToBottom, 250);
+      return () => clearTimeout(t);
+    }
+  }, [hideControls, result, feedback, isSubmitting]);
+
   useEffect(() => {
     const onResult = ({ winner, message }) => {
       setIsSubmitting(false);
       setResult(winner === me ? "🎉 You win!" : `💀 ${opponent} won`);
       setFeedback(message);
       setHideControls(false);
-      setTimeout(scrollToBottom, 100);
     };
     const onFeedback = (msg) => {
       setIsSubmitting(false);
       setFeedback(msg);
       setHideControls(false);
-      setTimeout(scrollToBottom, 100);
     };
 
     const onOpponentVotedNext = () => {
@@ -125,7 +131,6 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
     setIsSubmitting(true);
     setHideControls(false);
     socket.emit("submit", { code, language: lang });
-    setTimeout(scrollToBottom, 100);
   };
 
   const handleNextQuestion = () => {
