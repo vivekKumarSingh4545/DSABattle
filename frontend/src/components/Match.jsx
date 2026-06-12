@@ -19,24 +19,26 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
   const [editorHeight, setEditorHeight] = useState(400);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizerHovered, setIsResizerHovered] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [startHeight, setStartHeight] = useState(400);
+  const [hideControls, setHideControls] = useState(false);
 
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
+    setStartY(e.clientY);
+    setStartHeight(editorHeight);
   };
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e) => {
-      const container = document.getElementById("resizable-editor-container");
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        const newHeight = e.clientY - rect.top;
-        // Limit height between 150px and 800px
-        if (newHeight >= 150 && newHeight <= 800) {
-          setEditorHeight(newHeight);
-        }
+      const deltaY = e.clientY - startY;
+      const newHeight = startHeight + deltaY;
+      // Limit height between 150px and 900px
+      if (newHeight >= 150 && newHeight <= 900) {
+        setEditorHeight(newHeight);
       }
     };
 
@@ -50,7 +52,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, startY, startHeight]);
 
   // Rematch / navigation coordination states
   const [hasVotedNext, setHasVotedNext] = useState(false);
@@ -196,7 +198,23 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
             <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "#F43F5E" }}>🔥 {opponent}</div>
           </div>
 
-          <div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <button
+              onClick={() => setHideControls(!hideControls)}
+              style={{
+                padding: "6px 12px",
+                fontSize: "0.85rem",
+                background: hideControls ? "rgba(99, 102, 241, 0.2)" : "rgba(255, 255, 255, 0.05)",
+                border: hideControls ? "1px solid #6366F1" : "1px solid rgba(255, 255, 255, 0.15)",
+                borderRadius: "6px",
+                color: hideControls ? "#818CF8" : "#E2E8F0",
+                cursor: "pointer",
+                fontWeight: 600,
+                transition: "all 0.2s"
+              }}
+            >
+              {hideControls ? "Show Options" : "Hide Options"}
+            </button>
             <select value={lang} onChange={e => setLang(e.target.value)} style={{ padding: "6px 12px", fontSize: "0.9rem" }}>
               <option value="python">Python 3</option>
               <option value="cpp">C++ (g++)</option>
@@ -206,7 +224,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
         </div>
 
         {/* Monaco Editor Container */}
-        <div id="resizable-editor-container" style={{ height: `${editorHeight}px`, border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 8, overflow: "hidden", background: "#1e1e1e", minHeight: "150px", position: "relative" }}>
+        <div id="resizable-editor-container" style={{ height: hideControls ? "100%" : `${editorHeight}px`, flex: hideControls ? 1 : "none", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 8, overflow: "hidden", background: "#1e1e1e", minHeight: "150px", position: "relative" }}>
           <Editor
             height="100%"
             language={lang}
@@ -226,117 +244,121 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
         </div>
 
         {/* Draggable Divider */}
-        <div
-          onMouseDown={handleMouseDown}
-          onMouseEnter={() => setIsResizerHovered(true)}
-          onMouseLeave={() => setIsResizerHovered(false)}
-          style={{
-            height: "12px",
-            margin: "-8px 0",
-            cursor: "ns-resize",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10,
-            userSelect: "none"
-          }}
-        >
-          <div style={{
-            width: "60px",
-            height: "4px",
-            borderRadius: "2px",
-            background: isDragging || isResizerHovered ? "#818CF8" : "rgba(255, 255, 255, 0.15)",
-            boxShadow: isDragging || isResizerHovered ? "0 0 8px #818CF8" : "none",
-            transition: "all 0.2s"
-          }} />
-        </div>
+        {!hideControls && (
+          <div
+            onMouseDown={handleMouseDown}
+            onMouseEnter={() => setIsResizerHovered(true)}
+            onMouseLeave={() => setIsResizerHovered(false)}
+            style={{
+              height: "12px",
+              margin: "-8px 0",
+              cursor: "ns-resize",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+              userSelect: "none"
+            }}
+          >
+            <div style={{
+              width: "60px",
+              height: "4px",
+              borderRadius: "2px",
+              background: isDragging || isResizerHovered ? "#818CF8" : "rgba(255, 255, 255, 0.15)",
+              boxShadow: isDragging || isResizerHovered ? "0 0 8px #818CF8" : "none",
+              transition: "all 0.2s"
+            }} />
+          </div>
+        )}
 
         {/* Submission / Results Panel */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <button onClick={submit} disabled={isSubmitting || !!result} style={{ width: "100%", padding: "12px" }}>
-              {isSubmitting ? "Judging..." : "Submit Solution"}
-            </button>
-          </div>
-
-          {feedback && (
-            <div style={{
-              background: feedback.includes("Passed") || feedback.includes("passed") ? "rgba(16, 185, 129, 0.1)" : "rgba(244, 63, 94, 0.1)",
-              border: feedback.includes("Passed") || feedback.includes("passed") ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(244, 63, 94, 0.2)",
-              borderRadius: 8,
-              padding: 12,
-              fontSize: "0.9rem"
-            }}>
-              <strong style={{ color: feedback.includes("Passed") || feedback.includes("passed") ? "#10B981" : "#F43F5E" }}>
-                {feedback.includes("Passed") || feedback.includes("passed") ? "Success" : "Feedback"}
-              </strong>
-              <pre style={{ margin: "6px 0 0 0", fontFamily: "Fira Code, monospace", fontSize: "0.8rem", whiteSpace: "pre-wrap", opacity: 0.9 }}>
-                {feedback}
-              </pre>
+        {!hideControls && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button onClick={submit} disabled={isSubmitting || !!result} style={{ width: "100%", padding: "12px" }}>
+                {isSubmitting ? "Judging..." : "Submit Solution"}
+              </button>
             </div>
-          )}
 
-          {result && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 12 }}>
+            {feedback && (
               <div style={{
-                textAlign: "center",
-                padding: "16px",
+                background: feedback.includes("Passed") || feedback.includes("passed") ? "rgba(16, 185, 129, 0.1)" : "rgba(244, 63, 94, 0.1)",
+                border: feedback.includes("Passed") || feedback.includes("passed") ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(244, 63, 94, 0.2)",
                 borderRadius: 8,
-                background: result.includes("win") ? "rgba(16, 185, 129, 0.15)" : "rgba(244, 63, 94, 0.15)",
-                border: result.includes("win") ? "2px solid #10B981" : "2px solid #F43F5E",
+                padding: 12,
+                fontSize: "0.9rem"
               }}>
-                <h2 style={{ margin: 0, color: result.includes("win") ? "#10B981" : "#F43F5E" }}>{result}</h2>
+                <strong style={{ color: feedback.includes("Passed") || feedback.includes("passed") ? "#10B981" : "#F43F5E" }}>
+                  {feedback.includes("Passed") || feedback.includes("passed") ? "Success" : "Feedback"}
+                </strong>
+                <pre style={{ margin: "6px 0 0 0", fontFamily: "Fira Code, monospace", fontSize: "0.8rem", whiteSpace: "pre-wrap", opacity: 0.9 }}>
+                  {feedback}
+                </pre>
               </div>
+            )}
 
-              {/* Rematch status notifications */}
-              {opponentLeft && (
-                <div style={{ color: "#F43F5E", fontSize: "0.9rem", textAlign: "center", fontWeight: "bold" }}>
-                  ⚠️ {opponent} has left the match lobby.
+            {result && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 12 }}>
+                <div style={{
+                  textAlign: "center",
+                  padding: "16px",
+                  borderRadius: 8,
+                  background: result.includes("win") ? "rgba(16, 185, 129, 0.15)" : "rgba(244, 63, 94, 0.15)",
+                  border: result.includes("win") ? "2px solid #10B981" : "2px solid #F43F5E",
+                }}>
+                  <h2 style={{ margin: 0, color: result.includes("win") ? "#10B981" : "#F43F5E" }}>{result}</h2>
                 </div>
-              )}
-              {opponentVotedNext && !hasVotedNext && (
-                <div style={{ color: "#10B981", fontSize: "0.9rem", textAlign: "center", fontWeight: "bold" }}>
-                  💡 {opponent} wants a rematch! Click "Next Question" to play.
-                </div>
-              )}
 
-              {/* Options Row */}
-              <div style={{ display: "flex", gap: 12, width: "100%" }}>
-                <button 
-                  onClick={handleNextQuestion} 
-                  disabled={hasVotedNext || opponentLeft} 
-                  style={{ 
-                    flex: 1.2, 
-                    background: hasVotedNext ? "#374151" : "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-                    boxShadow: hasVotedNext ? "none" : "0 4px 12px rgba(16, 185, 129, 0.3)",
-                    color: hasVotedNext ? "#9CA3AF" : "#FFF"
-                  }}
-                >
-                  {hasVotedNext ? "Waiting for Opponent..." : "Next Question"}
-                </button>
-                <button 
-                  onClick={handleFindAnother} 
-                  style={{ 
-                    flex: 1.2, 
-                    background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)" 
-                  }}
-                >
-                  Find Another
-                </button>
-                <button 
-                  onClick={handleQuit} 
-                  style={{ 
-                    flex: 0.8, 
-                    background: "rgba(255, 255, 255, 0.08)",
-                    border: "1px solid rgba(255, 255, 255, 0.15)"
-                  }}
-                >
-                  Quit
-                </button>
+                {/* Rematch status notifications */}
+                {opponentLeft && (
+                  <div style={{ color: "#F43F5E", fontSize: "0.9rem", textAlign: "center", fontWeight: "bold" }}>
+                    ⚠️ {opponent} has left the match lobby.
+                  </div>
+                )}
+                {opponentVotedNext && !hasVotedNext && (
+                  <div style={{ color: "#10B981", fontSize: "0.9rem", textAlign: "center", fontWeight: "bold" }}>
+                    💡 {opponent} wants a rematch! Click "Next Question" to play.
+                  </div>
+                )}
+
+                {/* Options Row */}
+                <div style={{ display: "flex", gap: 12, width: "100%" }}>
+                  <button 
+                    onClick={handleNextQuestion} 
+                    disabled={hasVotedNext || opponentLeft} 
+                    style={{ 
+                      flex: 1.2, 
+                      background: hasVotedNext ? "#374151" : "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                      boxShadow: hasVotedNext ? "none" : "0 4px 12px rgba(16, 185, 129, 0.3)",
+                      color: hasVotedNext ? "#9CA3AF" : "#FFF"
+                    }}
+                  >
+                    {hasVotedNext ? "Waiting for Opponent..." : "Next Question"}
+                  </button>
+                  <button 
+                    onClick={handleFindAnother} 
+                    style={{ 
+                      flex: 1.2, 
+                      background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)" 
+                    }}
+                  >
+                    Find Another
+                  </button>
+                  <button 
+                    onClick={handleQuit} 
+                    style={{ 
+                      flex: 0.8, 
+                      background: "rgba(255, 255, 255, 0.08)",
+                      border: "1px solid rgba(255, 255, 255, 0.15)"
+                    }}
+                  >
+                    Quit
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

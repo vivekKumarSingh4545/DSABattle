@@ -56,6 +56,15 @@ export default function Chat({ playerName, problem, opponent }) {
             )}
             {messages.map((m, i) => {
               const isMe = m.sender === playerName;
+              const formattedTime = (() => {
+                try {
+                  const d = new Date(m.timestamp);
+                  if (isNaN(d.getTime())) return m.timestamp;
+                  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } catch (e) {
+                  return m.timestamp;
+                }
+              })();
               return (
                 <div
                   key={i}
@@ -68,7 +77,7 @@ export default function Chat({ playerName, problem, opponent }) {
                   }}
                 >
                   <div style={{ fontSize: "0.75rem", opacity: 0.5, marginBottom: 2, paddingLeft: 4, paddingRight: 4 }}>
-                    {isMe ? "You" : m.sender} • {m.timestamp}
+                    {isMe ? "You" : m.sender} • {formattedTime}
                   </div>
                   <div
                     style={{

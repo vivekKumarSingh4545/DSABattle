@@ -176,7 +176,7 @@ io.on("connection", (socket) => {
     io.to(m.roomId).emit("receive-message", {
       sender: m.players[socket.id],
       text: text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toISOString()
     });
   });
 
