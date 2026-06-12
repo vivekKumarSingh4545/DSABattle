@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { socket } from "../socket";
 import Editor from "@monaco-editor/react";
 
@@ -14,6 +14,16 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
   const [feedback, setFeedback] = useState("");
   const [result, setResult] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const editorCardRef = useRef(null);
+
+  const scrollToBottom = () => {
+    if (editorCardRef.current) {
+      editorCardRef.current.scrollTo({
+        top: editorCardRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
+  };
 
   // Editor resizing states
   const [editorHeight, setEditorHeight] = useState(400);
@@ -80,11 +90,13 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
       setResult(winner === me ? "🎉 You win!" : `💀 ${opponent} won`);
       setFeedback(message);
       setHideControls(false);
+      setTimeout(scrollToBottom, 100);
     };
     const onFeedback = (msg) => {
       setIsSubmitting(false);
       setFeedback(msg);
       setHideControls(false);
+      setTimeout(scrollToBottom, 100);
     };
 
     const onOpponentVotedNext = () => {
@@ -113,6 +125,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
     setIsSubmitting(true);
     setHideControls(false);
     socket.emit("submit", { code, language: lang });
+    setTimeout(scrollToBottom, 100);
   };
 
   const handleNextQuestion = () => {
@@ -194,7 +207,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
       </div>
 
       {/* Editor & Actions */}
-      <div className="card-premium" style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", overflowY: "auto" }}>
+      <div ref={editorCardRef} className="card-premium" style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: 12 }}>
           <div>
             <span style={{ fontSize: "0.8rem", opacity: 0.6 }}>Dueling against:</span>
