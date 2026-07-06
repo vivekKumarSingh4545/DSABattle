@@ -200,7 +200,7 @@ The app runs at `http://localhost:3000`.
 2. **Find a match** to get paired with an opponent instantly.
 3. Both players receive the **same problem** at the same moment.
 4. Code, submit, and get **instant verdicts**.
-5. First correct solve — or best result when time runs out — **wins the battle**.
+5. First correct solver — **wins the battle**.
 
 ---
 
