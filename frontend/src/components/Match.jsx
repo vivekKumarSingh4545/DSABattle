@@ -169,6 +169,29 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
             DSA Battle Arena
           </span>
           <h2 style={{ fontSize: "2rem", marginTop: 4, marginBottom: 8 }}>{problem.title}</h2>
+          {problem.difficulty && (
+            <span style={{
+              display: "inline-block",
+              padding: "4px 10px",
+              borderRadius: "12px",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              background: problem.difficulty === "Easy" ? "rgba(16, 185, 129, 0.15)" : 
+                          problem.difficulty === "Medium" ? "rgba(234, 179, 8, 0.15)" : 
+                          "rgba(244, 63, 94, 0.15)",
+              color: problem.difficulty === "Easy" ? "#10B981" : 
+                     problem.difficulty === "Medium" ? "#EAB308" : 
+                     "#F43F5E",
+              border: `1px solid ${
+                problem.difficulty === "Easy" ? "rgba(16, 185, 129, 0.3)" : 
+                problem.difficulty === "Medium" ? "rgba(234, 179, 8, 0.3)" : 
+                "rgba(244, 63, 94, 0.3)"
+              }`
+            }}>
+              {problem.difficulty}
+            </span>
+          )}
         </div>
 
         <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: 16 }}>
