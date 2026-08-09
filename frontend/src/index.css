@@ -26,11 +26,14 @@ body {
               #0B0F19;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  box-sizing: border-box;
 }
 
 /* Scrollbar styling */
