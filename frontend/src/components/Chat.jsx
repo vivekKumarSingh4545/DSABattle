@@ -106,7 +106,7 @@ export default function Chat({ playerName, problem, opponent }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message..."
-              style={{ flex: 1, padding: "8px 12px", fontSize: "0.85rem" }}
+              style={{ flex: 1, padding: "8px 12px", fontSize: "0.85rem", boxSizing: "border-box", minWidth: 0 }}
             />
             <button type="submit" style={{ padding: "8px 16px", fontSize: "0.85rem" }}>
               Send
