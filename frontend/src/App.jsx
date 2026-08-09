@@ -114,34 +114,32 @@ export default function App() {
                 >
                   💬 Match Chat & Score
                 </button>
-                {showDropdown && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "120%",
-                      right: 0,
-                      width: "350px",
-                      height: "600px",
-                      maxHeight: "80vh",
-                      background: "#111827",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                      borderRadius: "12px",
-                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 12,
-                      padding: 16,
-                      zIndex: 100
-                    }}
-                  >
-                    <div style={{ height: "190px", overflow: "hidden", minHeight: 0, flexShrink: 0 }}>
-                      <Leaderboard />
-                    </div>
-                    <div style={{ flex: 1, minHeight: 0 }}>
-                      <Chat playerName={playerName} problem={problem} opponent={opponent} />
-                    </div>
+                <div
+                  style={{
+                    display: showDropdown ? "flex" : "none",
+                    position: "absolute",
+                    top: "120%",
+                    right: 0,
+                    width: "350px",
+                    height: "600px",
+                    maxHeight: "80vh",
+                    background: "#111827",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+                    flexDirection: "column",
+                    gap: 12,
+                    padding: 16,
+                    zIndex: 100
+                  }}
+                >
+                  <div style={{ height: "190px", overflow: "hidden", minHeight: 0, flexShrink: 0 }}>
+                    <Leaderboard />
                   </div>
-                )}
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <Chat playerName={playerName} problem={problem} opponent={opponent} />
+                  </div>
+                </div>
               </div>
             )}
           </div>
