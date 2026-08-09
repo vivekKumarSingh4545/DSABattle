@@ -88,7 +88,7 @@ io.on("connection", (socket) => {
       io.to(roomId).emit("match-found", {
         matchId,
         roomId,
-        problem: { id: problem.id, title: problem.title, statement: problem.statement, note: problem.note, test_cases: problem.test_cases },
+        problem: { id: problem.id, title: problem.title, difficulty: problem.difficulty, statement: problem.statement, note: problem.note, test_cases: problem.test_cases },
         players: [p1.name, p2.name]
       });
 
@@ -161,7 +161,7 @@ io.on("connection", (socket) => {
       io.to(m.roomId).emit("match-found", {
         matchId,
         roomId: m.roomId,
-        problem: { id: newProblem.id, title: newProblem.title, statement: newProblem.statement, note: newProblem.note, test_cases: newProblem.test_cases },
+        problem: { id: newProblem.id, title: newProblem.title, difficulty: newProblem.difficulty, statement: newProblem.statement, note: newProblem.note, test_cases: newProblem.test_cases },
         players: Object.values(m.players)
       });
     }
