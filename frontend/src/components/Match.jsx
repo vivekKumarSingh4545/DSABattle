@@ -149,7 +149,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.7fr", gap: 24, alignItems: "stretch", height: "calc(100vh - 160px)", position: "relative" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.7fr", gap: 24, alignItems: "stretch", height: "calc(100vh - 110px)", position: "relative" }}>
       {isDragging && (
         <div style={{
           position: "fixed",
@@ -268,7 +268,7 @@ export default function Match({ me, opponent, problem, onQuit, onFindAnother }) 
         </div>
 
         {/* Monaco Editor Container */}
-        <div id="resizable-editor-container" style={{ height: hideControls ? "100%" : `${editorHeight}px`, flex: hideControls ? 1 : "none", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 8, overflow: "hidden", background: "#1e1e1e", minHeight: "150px", position: "relative" }}>
+        <div id="resizable-editor-container" style={{ flex: hideControls ? 1 : (isDragging || editorHeight !== 400 ? "none" : 1), height: isDragging || editorHeight !== 400 ? `${editorHeight}px` : "auto", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 8, overflow: "hidden", background: "#1e1e1e", minHeight: "150px", position: "relative" }}>
           <Editor
             height="100%"
             language={lang}

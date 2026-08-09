@@ -49,6 +49,23 @@ export default function App() {
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (showDropdown) setUnreadCount(0);
+  }, [showDropdown]);
+
+  useEffect(() => {
+    const handleUnread = () => {
+      if (!showDropdown) setUnreadCount(prev => prev + 1);
+    };
+    socket.on("receive-message", handleUnread);
+    socket.on("match-result", handleUnread);
+    return () => {
+      socket.off("receive-message", handleUnread);
+      socket.off("match-result", handleUnread);
+    };
+  }, [showDropdown]);
 
   useEffect(() => {
     if (matchStartTime && durationMs) {
@@ -109,10 +126,32 @@ export default function App() {
                     color: showDropdown ? "#818CF8" : "#E2E8F0",
                     cursor: "pointer",
                     fontWeight: 600,
-                    transition: "all 0.2s"
+                    transition: "all 0.2s",
+                    position: "relative"
                   }}
                 >
                   💬 Match Chat & Score
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position: "absolute",
+                      top: "-6px",
+                      right: "-6px",
+                      minWidth: "20px",
+                      height: "20px",
+                      background: "#EF4444",
+                      borderRadius: "10px",
+                      border: "2px solid #0B0F19",
+                      color: "white",
+                      fontSize: "11px",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 4px"
+                    }}>
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </button>
                 <div
                   style={{
