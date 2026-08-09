@@ -55,6 +55,7 @@ async function runOnce({ code, language, input, timeLimitMs = 5000 }) {
 }
 
 async function judgeSubmission({ code, language, problem }) {
+  let passedCount = 0;
   for (const tc of problem.test_cases) {
     let res;
     // retry once on failure
@@ -64,22 +65,24 @@ async function judgeSubmission({ code, language, problem }) {
         break;
       } catch (e) {
         if (attempt === 1) {
-          return { success: false, message: `Judge Error: ${e.message}` };
+          return { success: false, passedCount, message: `Judge Error: ${e.message}` };
         }
         await new Promise(r => setTimeout(r, 1000));
       }
     }
     if (!res.ok) {
-      return { success: false, message: `Runtime Error: ${res.error || ""}` };
+      return { success: false, passedCount, message: `Runtime Error: ${res.error || ""}` };
     }
     if (normalize(res.stdout) !== normalize(tc.output)) {
       return {
         success: false,
+        passedCount,
         message: `Wrong Answer on input:\n${tc.input}\nExpected: ${tc.output}\nGot: ${res.stdout}`
       };
     }
+    passedCount++;
   }
-  return { success: true, message: "All test cases passed." };
+  return { success: true, passedCount, message: "All test cases passed." };
 }
 
 module.exports = { judgeSubmission };

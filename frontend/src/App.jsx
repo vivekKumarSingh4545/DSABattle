@@ -12,12 +12,17 @@ export default function App() {
   const [problem, setProblem] = useState(null);
   const [autoSearch, setAutoSearch] = useState(false);
 
+  const [matchStartTime, setMatchStartTime] = useState(null);
+  const [durationMs, setDurationMs] = useState(null);
+
   useEffect(() => {
     const onMatch = (payload) => {
       const myName = playerName.trim() || payload.players[0]; // fallback
       const others = payload.players.filter(n => n !== myName);
       setOpponent(others[0] || "Opponent");
       setProblem(payload.problem);
+      setMatchStartTime(payload.matchStartTime);
+      setDurationMs(payload.durationMs);
     };
 
     socket.on("match-found", onMatch);
@@ -29,21 +34,64 @@ export default function App() {
   const onQuit = useCallback(() => {
     setProblem(null);
     setOpponent("");
+    setMatchStartTime(null);
+    setDurationMs(null);
     setAutoSearch(false);
   }, []);
 
   const onFindAnother = useCallback(() => {
     setProblem(null);
     setOpponent("");
+    setMatchStartTime(null);
+    setDurationMs(null);
     setAutoSearch(true);
   }, []);
 
   const [showDropdown, setShowDropdown] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (matchStartTime && durationMs) {
+      const updateTimer = () => {
+        const elapsed = Date.now() - matchStartTime;
+        const remaining = Math.max(0, durationMs - elapsed);
+        setTimeLeft(remaining);
+      };
+      updateTimer();
+      const interval = setInterval(updateTimer, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setTimeLeft(null);
+    }
+  }, [matchStartTime, durationMs]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <header className="app-header" style={{ position: "relative", zIndex: 50 }}>
         <div className="app-logo">DSA BATTLE</div>
+        
+        {timeLeft !== null && (
+          <div style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: "1.2rem",
+            fontWeight: 800,
+            color: timeLeft <= 60000 ? "#F43F5E" : "#E2E8F0",
+            background: "rgba(0,0,0,0.3)",
+            padding: "4px 16px",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            fontFamily: "Fira Code, monospace",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}>
+            ⏱️ {Math.floor(timeLeft / 60000).toString().padStart(2, '0')}:
+            {Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0')}
+          </div>
+        )}
+
         {playerName && (
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div style={{ fontSize: "0.95rem", opacity: 0.8 }}>
@@ -118,6 +166,8 @@ export default function App() {
               problem={problem} 
               onQuit={onQuit}
               onFindAnother={onFindAnother}
+              matchStartTime={matchStartTime}
+              durationMs={durationMs}
             />
           </div>
         )}

@@ -44,6 +44,7 @@ io.on("connection", (socket) => {
     if (matchId) {
       const m = matches.get(matchId);
       if (m) {
+        if (m.timerId) clearTimeout(m.timerId);
         socket.leave(m.roomId);
         socket.to(m.roomId).emit("opponent-left");
         // Clean up match entry
@@ -69,6 +70,31 @@ io.on("connection", (socket) => {
       const p1 = waiting;
       const p2 = { socketId: socket.id, name: playerName };
 
+      const startTime = Date.now();
+      const durationMs = 60 * 60 * 1000; // 1 hour
+
+      const timerId = setTimeout(() => {
+        const m = matches.get(matchId);
+        if (m && !m.winner) {
+          const p1Score = m.maxTestCasesPassed[p1.name] || 0;
+          const p2Score = m.maxTestCasesPassed[p2.name] || 0;
+          
+          if (p1Score > p2Score) {
+            m.winner = p1.name;
+            m.scores[p1.name] = (m.scores[p1.name] || 0) + 1;
+            io.to(m.roomId).emit("match-result", { winner: m.winner, message: `Time's up! ${p1.name} wins by passing more test cases (${p1Score} to ${p2Score}).` });
+          } else if (p2Score > p1Score) {
+            m.winner = p2.name;
+            m.scores[p2.name] = (m.scores[p2.name] || 0) + 1;
+            io.to(m.roomId).emit("match-result", { winner: m.winner, message: `Time's up! ${p2.name} wins by passing more test cases (${p2Score} to ${p1Score}).` });
+          } else {
+            m.winner = "Draw";
+            io.to(m.roomId).emit("match-result", { winner: "Draw", message: `Time's up! It's a draw (both passed ${p1Score} test cases).` });
+          }
+          io.to(m.roomId).emit("leaderboard-update", getMatchLeaderboard(m));
+        }
+      }, durationMs);
+
       matches.set(matchId, {
         roomId,
         problem,
@@ -76,7 +102,11 @@ io.on("connection", (socket) => {
         winner: null,
         votesNext: new Set(),
         playedProblemIds: new Set([problem.id]),
-        scores: { [p1.name]: 0, [p2.name]: 0 }
+        scores: { [p1.name]: 0, [p2.name]: 0 },
+        maxTestCasesPassed: { [p1.name]: 0, [p2.name]: 0 },
+        timerId,
+        startTime,
+        durationMs
       });
 
       playerToMatch.set(p1.socketId, matchId);
@@ -89,7 +119,9 @@ io.on("connection", (socket) => {
         matchId,
         roomId,
         problem: { id: problem.id, title: problem.title, difficulty: problem.difficulty, statement: problem.statement, note: problem.note, test_cases: problem.test_cases },
-        players: [p1.name, p2.name]
+        players: [p1.name, p2.name],
+        matchStartTime: startTime,
+        durationMs
       });
 
       // Emit initial 0-0 scores to room
@@ -114,9 +146,16 @@ io.on("connection", (socket) => {
     const problemFull = problems.find(p => p.id === m.problem.id);
     try {
       const result = await judgeSubmission({ code, language, problem: problemFull });
+      
+      const playerName = m.players[socket.id];
+      if (result.passedCount > (m.maxTestCasesPassed[playerName] || 0)) {
+        m.maxTestCasesPassed[playerName] = result.passedCount;
+      }
+
       if (result.success) {
         m.winner = m.players[socket.id];
         m.scores[m.winner] = (m.scores[m.winner] || 0) + 1;
+        if (m.timerId) clearTimeout(m.timerId);
         io.to(m.roomId).emit("match-result", { winner: m.winner, message: result.message });
         io.to(m.roomId).emit("leaderboard-update", getMatchLeaderboard(m));
       } else {
@@ -153,16 +192,50 @@ io.on("connection", (socket) => {
         newProblem = getRandomProblem();
       }
 
+      if (m.timerId) clearTimeout(m.timerId);
+
+      const startTime = Date.now();
+      const durationMs = 60 * 60 * 1000;
+      const timerId = setTimeout(() => {
+        const currentM = matches.get(matchId);
+        if (currentM && !currentM.winner) {
+          const pNames = Object.values(currentM.players);
+          const p1Score = currentM.maxTestCasesPassed[pNames[0]] || 0;
+          const p2Score = currentM.maxTestCasesPassed[pNames[1]] || 0;
+          
+          if (p1Score > p2Score) {
+            currentM.winner = pNames[0];
+            currentM.scores[pNames[0]] = (currentM.scores[pNames[0]] || 0) + 1;
+            io.to(currentM.roomId).emit("match-result", { winner: currentM.winner, message: `Time's up! ${pNames[0]} wins by passing more test cases (${p1Score} to ${p2Score}).` });
+          } else if (p2Score > p1Score) {
+            currentM.winner = pNames[1];
+            currentM.scores[pNames[1]] = (currentM.scores[pNames[1]] || 0) + 1;
+            io.to(currentM.roomId).emit("match-result", { winner: currentM.winner, message: `Time's up! ${pNames[1]} wins by passing more test cases (${p2Score} to ${p1Score}).` });
+          } else {
+            currentM.winner = "Draw";
+            io.to(currentM.roomId).emit("match-result", { winner: "Draw", message: `Time's up! It's a draw (both passed ${p1Score} test cases).` });
+          }
+          io.to(currentM.roomId).emit("leaderboard-update", getMatchLeaderboard(currentM));
+        }
+      }, durationMs);
+
       m.playedProblemIds.add(newProblem.id);
       m.problem = newProblem;
       m.winner = null;
       m.votesNext.clear();
+      m.maxTestCasesPassed = {};
+      Object.values(m.players).forEach(p => { m.maxTestCasesPassed[p] = 0; });
+      m.timerId = timerId;
+      m.startTime = startTime;
+      m.durationMs = durationMs;
 
       io.to(m.roomId).emit("match-found", {
         matchId,
         roomId: m.roomId,
         problem: { id: newProblem.id, title: newProblem.title, difficulty: newProblem.difficulty, statement: newProblem.statement, note: newProblem.note, test_cases: newProblem.test_cases },
-        players: Object.values(m.players)
+        players: Object.values(m.players),
+        matchStartTime: startTime,
+        durationMs
       });
     }
   });
